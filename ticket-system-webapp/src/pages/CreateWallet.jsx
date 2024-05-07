@@ -17,6 +17,7 @@ const CreateWallet = () => {
     const [error, setError] = useState('');
     const [showError, setShowError] = useState(false);
     const [keystoreString, setKeystoreString] = useState('');
+    const [showSuccess, setShowSuccess] = useState(false);
 
     const updateWalletState = (address, keystore, privateKey) => {
         setWalletCreated(true);
@@ -27,16 +28,21 @@ const CreateWallet = () => {
 
     const generateWallet = async () => {
         try {
-            setShowError(false);
             
             if (password !== confirmPassword) {
                 setError('Passwords must match');
                 setShowError(true);
+                setTimeout(() => {
+                    setShowError(false);
+                }, 3000);
                 return;
             }
             if (!password || password.length < 9) {
                 setError('Enter a valid 9 letter password.');
                 setShowError(true);
+                setTimeout(() => {
+                    setShowError(false);
+                }, 3000);
                 return;
             }
 
@@ -47,10 +53,17 @@ const CreateWallet = () => {
             var keystore = await web3.eth.accounts.encrypt(wallet.privateKey, password);
 
             updateWalletState(wallet.address, JSON.stringify(keystore, null, 2), wallet.privateKey);
+            setShowSuccess(true);
+            setTimeout(() => {
+                setShowSuccess(false);
+            }, 3000);
 
         } catch (err) {
             setError('Error creating wallet. Please try again.');
             console.error(err);
+            setTimeout(() => {
+                setShowError(false);
+            }, 3000);
         }
 
 
@@ -109,7 +122,12 @@ const CreateWallet = () => {
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
                         />
-                        {showError && <InlineNotification kind="error" title={error} />}
+                        {showError && <div style={{position:'absolute', top:'-20%', right:'-20%'}}>
+                                <InlineNotification kind="error" title={error} />
+                            </div>}
+                        {showSuccess && <div style={{position:'absolute', top:'-20%', right:'-20%'}}>
+                            <InlineNotification kind="success" title="Wallet Successfully Generated" />
+                        </div>}
                     </FormGroup>
                     <br />
                     <Button onClick={generateWallet}>Generate Wallet</Button>
