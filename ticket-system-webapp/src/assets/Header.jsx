@@ -8,15 +8,21 @@ const Header = ({ isLoggedIn }) => {
     return (
       <div>
         <nav id='header_nav'>
-          <ul className='pages_list'>
+          <ul className='pages_list' style={{ display: 'flex', listStyleType: 'none', padding: 0 }}>
             <li style={{ width: '78px', height: '78px'}}>
-              <Link to="">Home</Link>
+              <Link to="" style={{ whiteSpace: 'nowrap' }}>Home</Link>
             </li>
             <li style={{ width: '78px', height: '78px'}}>
-              <Link to="data">Data</Link>
+              <Link to="createWallet" style={{ whiteSpace: 'nowrap' }}>Create Wallet</Link>
             </li>
             <li style={{ width: '78px', height: '78px'}}>
-              <Link to="salim">Salim GUI</Link>
+              <Link to="checkBalance" style={{ whiteSpace: 'nowrap' }}>Check Balance</Link>
+            </li>
+            <li style={{ width: '78px', height: '78px'}}>
+              <Link to="purchaseTicket" style={{ whiteSpace: 'nowrap' }}>Purchase Ticket</Link>
+            </li>
+            <li style={{ width: '78px', height: '78px'}}>
+              <Link to="ticketTransfer" style={{ whiteSpace: 'nowrap' }}>Transfer Ticket</Link>
             </li>
           </ul>
         </nav>
@@ -25,8 +31,5 @@ const Header = ({ isLoggedIn }) => {
     )
 }
 
-Header.propTypes = {
-  isLoggedIn: PropTypes.bool.isRequired,
-};
 
 export default Header;
