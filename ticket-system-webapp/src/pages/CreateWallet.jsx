@@ -46,7 +46,7 @@ const CreateWallet = () => {
                 return;
             }
 
-            const web3 = new Web3();
+            const web3 = new Web3("https://rpc2.sepolia.org");
             const wallet = web3.eth.accounts.create();
             console.log(wallet);
 

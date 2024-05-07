@@ -1,7 +1,15 @@
-export default function TransferTicket() {
+import Web3 from 'web3';
+
+export default function TransferTicketPage() {
+
+
+  const transferTicket = () => {
+    // Implement the transfer ticket functionality here
+  }
+
   return (
     <div>
-      <h1>Transfer Ticket</h1>
+      
     </div>
   )
 }
