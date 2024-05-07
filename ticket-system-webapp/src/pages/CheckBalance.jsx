@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 export default function CheckBalance({walletAddress, setWalletAddress, ticketAddress}) {
 
-    const [ethBalance, setEthBalance] = useState('');
+    const [userEthBalance, setUserEthBalance] = useState('');
     const [userTicketBalance, setUserTicketBalance] = useState('');
     const [venueTicketBalance, setVenueTicketBalance] = useState('');
     const [receivedBalance, setReceivedBalance] = useState(false);
@@ -24,7 +24,7 @@ export default function CheckBalance({walletAddress, setWalletAddress, ticketAdd
                 
             // get the eth balance of the wallet
             web3.eth.getBalance(walletAddress).then(function(balance) {
-            setEthBalance(web3.utils.fromWei(balance, "ether"));
+            setUserEthBalance(web3.utils.fromWei(balance, "ether"));
             setReceivedBalance(true);
             });
 
@@ -91,7 +91,7 @@ export default function CheckBalance({walletAddress, setWalletAddress, ticketAdd
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
                         <div style={{ flex: 1 }}>
-                            <TextInput labelText="Seth Balance" value={ethBalance} readOnly id="wallet-address" />
+                            <TextInput labelText="Seth Balance" value={userEthBalance} readOnly id="wallet-address" />
                         </div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center' }}>
