@@ -11,7 +11,8 @@ import { useState } from 'react';
 
 function App() {
 
-  const [walletAddress, setWalletAddress] = useState('');  
+  const [userWalletAddress, setUserWalletAddress] = useState('0x6Fc02B71f5DECD64426Cf710F43Ec93EEdD13390');  
+  const [ticketContractAddress, setTicketContractAddress] = useState('0x3864B4FfEbF030f65D6F2d5FF3C5DfA585d0DE93');
   
   return (
     <div className="App">
@@ -20,8 +21,8 @@ function App() {
         <Routes>
           <Route index element={<HomePage/>} />
           <Route path="createWallet" element={<CreateWalletPage/>} />
-          <Route path="checkBalance" element={<CheckBalancePage walletAddress={walletAddress} setWalletAddress={setWalletAddress} ticketAddress={ticketAddress}/>} />
-          <Route path="purchaseTicket" element={<PurchaseTicketPage/>} />
+          <Route path="checkBalance" element={<CheckBalancePage walletAddress={userWalletAddress} setWalletAddress={setUserWalletAddress} ticketAddress={ticketAddress}/>} />
+          <Route path="purchaseTicket" element={<PurchaseTicketPage userWalletAddress={userWalletAddress} ticketContractAddress={ticketContractAddress}/>} />
           <Route path="ticketTransfer" element={<TransferTicketPage/>} />
         </Routes>
     </BrowserRouter>
