@@ -2,7 +2,7 @@ import { Tile, TextInput, Button, InlineNotification } from '@carbon/react';
 import '@carbon/react/scss/components/notification/_index.scss';
 import Web3 from 'web3';
 import { IERC20_ABI } from '../utils/IERC20_ABI';
-import { validator } from 'web3-validator';
+// import { validator } from 'web3-validator';
 import { useState } from 'react';
 
 export default function CheckBalance({walletAddress, setWalletAddress, ticketAddress}) {
