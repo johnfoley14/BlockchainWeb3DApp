@@ -1,50 +1,108 @@
 import { useState } from 'react';
-import { Tile, Tabs, TabList, Tab, TabPanels, TabPanel, TextInput, Button, Modal} from '@carbon/react';
+import { Tile, Tabs, TabList, Tab, TabPanels, TabPanel, TextInput, Button, Modal, FileUploader} from '@carbon/react';
 import '@carbon/react/scss/components/dropdown/_index.scss';
 import '@carbon/react/scss/components/tile/_index.scss';
 import '@carbon/react/scss/components/button/_index.scss';
 import '@carbon/react/scss/components/text-input/_index.scss';
 import '@carbon/react/scss/components/tabs/_index.scss';
 import '@carbon/react/scss/components/modal/_index.scss';
+import '@carbon/react/scss/components/file-uploader/_index.scss';
 import Web3 from 'web3';
 import { IERC20_ABI } from '../utils/IERC20_ABI';
 
-export default function PurchaseTicketPage({userWalletAddress, ticketContractAddress}) {
+export default function PurchaseTicketPage({userWalletAddress, ticketContractAddress, setUserWalletAddress, password, setPassword}) {
 
   
   const [privateKey, setPrivateKey] = useState("");
-  const [walletAddress, setWalletAddress] = useState(userWalletAddress);
   const [numberOfTicketsToBuy, setNumberOfTicketsToBuy] = useState(0);
   const [open, setOpen] = useState(false);
+  const [fileKeystoreContent, setFileKeystoreContent] = useState(null);
 
-  const purchaseTicket = async () => {
+    const handleFileUpload = (event) => {
+        const file = event.target.files[0];
+        if (file && file.type === "application/json") {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const jsonContent = JSON.parse(e.target.result);
+                    setFileKeystoreContent(jsonContent);
+                } catch (error) {
+                    console.error("Invalid JSON file");
+                }
+            };
+            reader.readAsText(file);
+        } else {
+            console.error("Please upload a valid JSON file");
+        }
+    };
+
+  const purchaseTicketViaPrivateKey = async () => {
     setOpen(false);
     
+    try{
     var web3 = new Web3("https://rpc2.sepolia.org");
 
     var contract = new web3.eth.Contract(IERC20_ABI, ticketContractAddress);
     var transaction = contract.methods.buyToken();
     var encodedABI = transaction.encodeABI();
-    var amount = 0;
+    var amount = 0.0005;
     let gasPrice = await web3.eth.getGasPrice();
     const tx = {
-        from: walletAddress,
+        from: userWalletAddress,
         to: ticketContractAddress,
         gas: 2000000,
         data: encodedABI,
         value: web3.utils.toWei(amount, 'ether'),
-        gasPrice: gasPrice
     };
+
+    console.log(tx);
+    tx.gasPrice = gasPrice;
     console.log(gasPrice);
 
     web3.eth.accounts.signTransaction(tx, privateKey).then(function(signedTx){
       console.log(JSON.stringify(signedTx));
-        web3.eth.sendSignedTransaction(signedTx.rawTransaction).on('receipt', function(receipt){
-            console.log("Transaction Receipt: ", JSON.stringify(receipt));
-
-        });
+      web3.eth.sendSignedTransaction(signedTx.rawTransaction);
     });
+
+    } catch(e) {
+      console.log(e);
+    }
+  }
+
+  const purchaseTicketViaKeystore = async () => {
+    setOpen(false);
     
+    try{
+      var web3 = new Web3("https://rpc2.sepolia.org");
+
+      var wallet = await web3.eth.accounts.decrypt(fileKeystoreContent, password);
+      setUserWalletAddress(wallet.address);
+
+      var contract = new web3.eth.Contract(IERC20_ABI, ticketContractAddress);
+      var transaction = contract.methods.buyToken();
+      var encodedABI = transaction.encodeABI();
+      var amount = 0.0005;
+      let gasPrice = await web3.eth.getGasPrice();
+      const tx = {
+          from: wallet.address,
+          to: ticketContractAddress,
+          gas: 2000000,
+          data: encodedABI,
+          value: web3.utils.toWei(amount, 'ether'),
+      };
+
+      console.log(tx);
+      tx.gasPrice = gasPrice;
+      console.log(gasPrice);
+
+      web3.eth.accounts.signTransaction(tx, wallet.privateKey).then(function(signedTx){
+        console.log(JSON.stringify(signedTx));
+        web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+      });
+
+    } catch(e) {
+      console.log(e);
+    }
   }
 
   return (
@@ -55,15 +113,62 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
             <Tab>Upload Keystore File</Tab>
             <Tab>Manual Entry</Tab>
           </TabList>
+          <div style={{ marginLeft:'2%'}}>
+            <br/>
+            <TextInput
+              id="numberOfTicketsToBuy"
+              labelText="Number of Tickets"
+              value={numberOfTicketsToBuy}
+              onChange={(e) => setNumberOfTicketsToBuy(e.target.value)}
+              pattern="[0-9]*"
+              placeholder="Max 99 tickets"
+              maxLength={2}
+            />
+            <TextInput 
+              labelText="Cost Per Ticket" 
+              value={0.005 + " ETH"} 
+              readOnly 
+              id="ticketCost" 
+            />
+            <TextInput 
+              labelText="Total Ticket Cost" 
+              value={numberOfTicketsToBuy * 0.005 + " ETH"} 
+              readOnly 
+              id="totalCost" 
+            />
+          </div>
           <TabPanels>
-            <TabPanel>Tab Panel 1</TabPanel>
+            <TabPanel>
+              <FileUploader
+                accept={['.json']}
+                buttonKind="primary"
+                buttonLabel="Add files"
+                filenameStatus="edit"
+                iconDescription="Clear file"
+                onChange={handleFileUpload}
+                labelDescription='Only .json files are supported.'
+              />
+              <TextInput.PasswordInput
+                id="decryptionPassword"
+                labelText="Password"
+                autoComplete="true"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <br/>
+              <Button onClick={()=>setOpen(true)}>Purchase Ticket</Button>
+              <Modal open={open} onRequestClose={() => setOpen(false)} onRequestSubmit={purchaseTicketViaKeystore} modalHeading="Confirm Ticket Purchase" primaryButtonText="Confirm" secondaryButtonText="Cancel">
+                <p>Are you sure you want to purchase {numberOfTicketsToBuy} ticket(s) for a total of {numberOfTicketsToBuy * 0.005} ETH?</p>
+              </Modal>
+            </TabPanel>
+
             <TabPanel>
               <TextInput
                 id="walletAddress"
                 labelText="Wallet Address"
                 autoComplete="true"
-                value={walletAddress}
-                onChange={(e) => setWalletAddress(e.target.value)}
+                value={userWalletAddress}
+                onChange={(e) => setUserWalletAddress(e.target.value)}
               />
               <TextInput.PasswordInput
                 id="privateKey"
@@ -72,30 +177,9 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
                 value={privateKey}
                 onChange={(e) => setPrivateKey(e.target.value)}
               />
-              <TextInput
-                id="numberOfTicketsToBuy"
-                labelText="Number of Tickets"
-                value={numberOfTicketsToBuy}
-                onChange={(e) => setNumberOfTicketsToBuy(e.target.value)}
-                pattern="[0-9]*"
-                placeholder="Max 99 tickets"
-                maxLength={2}
-              />
-              <TextInput 
-                labelText="Cost Per Ticket" 
-                value={0.005 + " ETH"} 
-                readOnly 
-                id="ticketCost" 
-              />
-              <TextInput 
-                labelText="Total Ticket Cost" 
-                value={numberOfTicketsToBuy * 0.005 + " ETH"} 
-                readOnly 
-                id="totalCost" 
-              />
               <br/>
               <Button onClick={()=>setOpen(true)}>Purchase Ticket</Button>
-              <Modal open={open} onRequestClose={() => setOpen(false)} onRequestSubmit={purchaseTicket} modalHeading="Confirm Ticket Purchase" primaryButtonText="Confirm" secondaryButtonText="Cancel">
+              <Modal open={open} onRequestClose={() => setOpen(false)} onRequestSubmit={purchaseTicketViaPrivateKey} modalHeading="Confirm Ticket Purchase" primaryButtonText="Confirm" secondaryButtonText="Cancel">
                 <p>Are you sure you want to purchase {numberOfTicketsToBuy} ticket(s) for a total of {numberOfTicketsToBuy * 0.005} ETH?</p>
               </Modal>
             </TabPanel>
@@ -119,3 +203,22 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
 
 // The UI should also specify the cost of a ticket to the user 
 
+
+
+
+
+
+
+
+
+
+// For the upload keystore
+// The user uploads the keystore (which is basically the encryption of the private key)
+// The user enters their password to decrypt the keystore
+// The UI should then display the wallet address and private key to the user
+// The browser now has access to the private key and can sign transactions on behalf of the user
+
+
+// we can keep the number of tickets etc and price the same, but we need to separate buttons and 
+// two seperate functions to handle the purchase of tickets in either tabs
+// one tab should call function purchaseTicketViaKeystore and the other should call purchaseTicketViaPrivateKey
