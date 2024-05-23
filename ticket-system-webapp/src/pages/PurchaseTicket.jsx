@@ -18,23 +18,23 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
   const [open, setOpen] = useState(false);
   const [fileKeystoreContent, setFileKeystoreContent] = useState(null);
 
-    const handleFileUpload = (event) => {
-        const file = event.target.files[0];
-        if (file && file.type === "application/json") {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const jsonContent = JSON.parse(e.target.result);
-                    setFileKeystoreContent(jsonContent);
-                } catch (error) {
-                    console.error("Invalid JSON file");
-                }
-            };
-            reader.readAsText(file);
-        } else {
-            console.error("Please upload a valid JSON file");
-        }
-    };
+  const handleFileUpload = (event) => {
+      const file = event.target.files[0];
+      if (file && file.type === "application/json") {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+              try {
+                  const jsonContent = JSON.parse(e.target.result);
+                  setFileKeystoreContent(jsonContent);
+              } catch (error) {
+                  console.error("Invalid JSON file");
+              }
+          };
+          reader.readAsText(file);
+      } else {
+          console.error("Please upload a valid JSON file");
+      }
+  };
 
   const purchaseTicketViaPrivateKey = async () => {
     setOpen(false);
