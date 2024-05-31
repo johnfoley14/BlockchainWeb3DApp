@@ -12,7 +12,8 @@ import { useState } from 'react';
 function App() {
 
   const [userWalletAddress, setUserWalletAddress] = useState('0x6Fc02B71f5DECD64426Cf710F43Ec93EEdD13390');  
-  const [ticketContractAddress, setTicketContractAddress] = useState('0x3864B4FfEbF030f65D6F2d5FF3C5DfA585d0DE93');
+  const [ticketContractAddress, setTicketContractAddress] = useState('0x0cce4E7d5DE14Ce4efd7Dd4983ab26B8e9aaeA3F');
+  const [vendorAddress, setVendorAddress] = useState('0xb08BBB9Ba40F75eD2d0675E9dd343241090d70A8');
   const [password, setPassword] = useState('');
   
   return (
@@ -22,14 +23,24 @@ function App() {
         <Routes>
           <Route index element={<HomePage/>} />
           <Route path="createWallet" element={<CreateWalletPage/>} />
-          <Route path="checkBalance" element={<CheckBalancePage walletAddress={userWalletAddress} setWalletAddress={setUserWalletAddress} ticketAddress={ticketAddress}/>} />
+          <Route path="checkBalance" element={<CheckBalancePage 
+          walletAddress={userWalletAddress} 
+          setWalletAddress={setUserWalletAddress} 
+          ticketContractAddress={ticketContractAddress}/>} />
           <Route path="purchaseTicket" element={<PurchaseTicketPage 
           userWalletAddress={userWalletAddress} 
           ticketContractAddress={ticketContractAddress} 
           setUserWalletAddress={setUserWalletAddress}
+          vendorAddress={vendorAddress}
           password={password}
           setPassword={setPassword}/>} />
-          <Route path="ticketTransfer" element={<TransferTicketPage/>} />
+          <Route path="ticketTransfer" element={<TransferTicketPage
+          userWalletAddress={userWalletAddress} 
+          ticketContractAddress={ticketContractAddress} 
+          setUserWalletAddress={setUserWalletAddress}
+          vendorAddress={vendorAddress}
+          password={password}
+          setPassword={setPassword}/>} />
         </Routes>
     </BrowserRouter>
     </div>

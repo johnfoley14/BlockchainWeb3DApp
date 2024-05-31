@@ -5,7 +5,7 @@ import { IERC20_ABI } from '../utils/IERC20_ABI';
 // import { validator } from 'web3-validator';
 import { useState } from 'react';
 
-export default function CheckBalance({walletAddress, setWalletAddress, ticketAddress}) {
+export default function CheckBalance({walletAddress, setWalletAddress, ticketContractAddress}) {
 
     const [userEthBalance, setUserEthBalance] = useState('');
     const [userTicketBalance, setUserTicketBalance] = useState('');
@@ -20,7 +20,7 @@ export default function CheckBalance({walletAddress, setWalletAddress, ticketAdd
 
         const web3 = new Web3("https://rpc2.sepolia.org");
 
-        if (web3.utils.isAddress(walletAddress) && web3.utils.isAddress(ticketAddress)) {
+        if (web3.utils.isAddress(walletAddress) && web3.utils.isAddress(ticketContractAddress)) {
                 
             // get the eth balance of the wallet
             web3.eth.getBalance(walletAddress).then(function(balance) {
@@ -29,25 +29,13 @@ export default function CheckBalance({walletAddress, setWalletAddress, ticketAdd
             });
 
             
-            const contract = new web3.eth.Contract(IERC20_ABI, ticketAddress);
+            const contract = new web3.eth.Contract(IERC20_ABI, ticketContractAddress);
             contract.methods.balanceOf(walletAddress).call().then(function(balance) {
-                console.log(balance);
-
-
-                // Once the contract is deployed, set ticket balance to the actual balance received 
-
-
-                setUserTicketBalance('10 ticket(s)');
+                setUserTicketBalance(balance.toString());
             });
 
-            contract.methods.balanceOf(ticketAddress).call().then(function(balance) {
-                console.log(balance);
-
-
-                // Once the contract is deployed, set ticket balance to the actual balance of tickets the contract has remaining 
-
-
-                setVenueTicketBalance('10 ticket(s)');
+            contract.methods.balanceOf(ticketContractAddress).call().then(function(balance) {
+                setVenueTicketBalance(balance.toString());
             });
 
             setShowSuccess(true);

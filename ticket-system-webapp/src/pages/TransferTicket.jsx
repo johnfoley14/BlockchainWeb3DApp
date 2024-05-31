@@ -7,10 +7,11 @@ import '@carbon/react/scss/components/text-input/_index.scss';
 import '@carbon/react/scss/components/tabs/_index.scss';
 import '@carbon/react/scss/components/modal/_index.scss';
 import '@carbon/react/scss/components/file-uploader/_index.scss';
+import '@carbon/react/scss/components/number-input/_index.scss';
 import Web3 from 'web3';
 import { IERC20_ABI } from '../utils/IERC20_ABI';
 
-export default function PurchaseTicketPage({userWalletAddress, ticketContractAddress, setUserWalletAddress, password, setPassword}) {
+export default function TransferTicketPage({userWalletAddress, ticketContractAddress, setUserWalletAddress, password, setPassword}) {
 
   
   const [privateKey, setPrivateKey] = useState("");
@@ -18,6 +19,9 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
   const [open, setOpen] = useState(false);
   const [fileKeystoreContent, setFileKeystoreContent] = useState(null);
   const [recipientAddress, setRecipientAddress] = useState('');
+  
+  var web3 = new Web3("https://rpc2.sepolia.org");
+  var contract = new web3.eth.Contract(IERC20_ABI, ticketContractAddress);
 
   const handleFileUpload = (event) => {
       const file = event.target.files[0];
@@ -41,29 +45,29 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
     setOpen(false);
     
     try{
-    var web3 = new Web3("https://rpc2.sepolia.org");
-
-    var contract = new web3.eth.Contract(IERC20_ABI, ticketContractAddress);
-    var transaction = contract.methods.transfer();
-    var encodedABI = transaction.encodeABI();
-    var amount = 0.0005;
-    let gasPrice = await web3.eth.getGasPrice();
-    const tx = {
+      
+      let gasPrice = await web3.eth.getGasPrice();
+      const tx = {
         from: userWalletAddress,
         to: ticketContractAddress,
         gas: 2000000,
-        data: encodedABI,
-        value: web3.utils.toWei(amount, 'ether'),
-    };
+        gasPrice: gasPrice,
+        data: contract.methods.transfer(recipientAddress, numberOfTicketsToSend).encodeABI()
+      };
 
-    console.log(tx);
-    tx.gasPrice = gasPrice;
-    console.log(gasPrice);
+      const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
 
-    web3.eth.accounts.signTransaction(tx, privateKey).then(function(signedTx){
-      console.log(JSON.stringify(signedTx));
-      web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-    });
+      // Send the transaction
+      web3.eth.sendSignedTransaction(signedTx.rawTransaction)
+      .once('transactionHash', function(hash) {
+          console.log('Transaction Hash:', hash);
+      })
+      .once('receipt', function(receipt) {
+          console.log('Receipt:', receipt);
+      })
+      .on('error', function(error) {
+          console.error('Error:', error);
+      });
 
     } catch(e) {
       console.log(e);
@@ -74,27 +78,18 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
     setOpen(false);
     
     try{
-      var web3 = new Web3("https://rpc2.sepolia.org");
 
       var wallet = await web3.eth.accounts.decrypt(fileKeystoreContent, password);
       setUserWalletAddress(wallet.address);
 
-      var contract = new web3.eth.Contract(IERC20_ABI, ticketContractAddress);
-      var transaction = contract.methods.buyToken();
-      var encodedABI = transaction.encodeABI();
-      var amount = 0.0005;
       let gasPrice = await web3.eth.getGasPrice();
       const tx = {
           from: wallet.address,
           to: ticketContractAddress,
           gas: 2000000,
-          data: encodedABI,
-          value: web3.utils.toWei(amount, 'ether'),
+          data: contract.methods.buyToken().encodeABI(),
+          gasPrice: gasPrice,
       };
-
-      console.log(tx);
-      tx.gasPrice = gasPrice;
-      console.log(gasPrice);
 
       web3.eth.accounts.signTransaction(tx, wallet.privateKey).then(function(signedTx){
         console.log(JSON.stringify(signedTx));
@@ -156,7 +151,6 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
                 <p>Are you sure you want to transfer {numberOfTicketsToSend} ticket(s) to the following address: {recipientAddress}</p>
               </Modal>
             </TabPanel>
-
             <TabPanel>
               <TextInput
                 id="walletAddress"
@@ -184,3 +178,50 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
     </div>
   )
 }
+
+
+
+
+      // const approve_tx = {
+      //   from: userWalletAddress,
+      //   to: ticketContractAddress,
+      //   gas: 2000000,
+      //   gasPrice: gasPrice,
+      //   data: contract.methods.approve(userWalletAddress, numberOfTicketsToSend).encodeABI(),
+      //   value: 0,
+      // };
+      // console.log("made tx")
+
+      // var signedTx = await web3.eth.accounts.signTransaction(approve_tx, privateKey);
+      // console.log(signedTx);
+      // // console.log("here2")
+
+
+      // var here = await web3.eth.sendSignedTransaction(signedTx.rawTransaction).then(function(receipt){
+      //   console.log("sent signed transaction")
+      // });
+
+      // console.log("here1")
+
+
+      
+      // console.log("here2")
+
+      // const transfer_tx = {
+      //     from: userWalletAddress,
+      //     to: ticketContractAddress,
+      //     gas: 2000000,
+      //     gasPrice: gasPrice,
+      //     data: contract.methods.transferFrom(userWalletAddress, recipientAddress, numberOfTicketsToSend).encodeABI(),
+      //     value: 0,
+      // };
+
+      // console.log("made transfer tx");
+
+      // web3.eth.accounts.signTransaction(transfer_tx, privateKey).then(function(signedTx){
+      //   console.log(JSON.stringify(signedTx));
+      //   web3.eth.sendSignedTransaction(signedTx.rawTransaction).then(function(receipt){
+      //     console.log("sent signed transaction")
+      //     console.log(receipt);
+      //   });
+      // });

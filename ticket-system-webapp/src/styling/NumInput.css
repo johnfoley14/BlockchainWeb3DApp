@@ -1,0 +1,10 @@
+.custom-number-input {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .custom-number-input label {
+    text-align: left;
+    margin-bottom: 4px; /* Adjust as needed */
+  }
+  

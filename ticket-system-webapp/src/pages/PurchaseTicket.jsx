@@ -10,12 +10,15 @@ import '@carbon/react/scss/components/file-uploader/_index.scss';
 import Web3 from 'web3';
 import { IERC20_ABI } from '../utils/IERC20_ABI';
 
-export default function PurchaseTicketPage({userWalletAddress, ticketContractAddress, setUserWalletAddress, password, setPassword}) {
+export default function PurchaseTicketPage({userWalletAddress, ticketContractAddress, setUserWalletAddress, vendorAddress, password, setPassword}) {
 
+  var web3 = new Web3("https://rpc2.sepolia.org");
+  var contract = new web3.eth.Contract(IERC20_ABI, ticketContractAddress);
   
   const [privateKey, setPrivateKey] = useState("");
   const [numberOfTicketsToBuy, setNumberOfTicketsToBuy] = useState(0);
   const [open, setOpen] = useState(false);
+  const [costPerTicket, setCostPerTicket] = useState(0.00001);
   const [fileKeystoreContent, setFileKeystoreContent] = useState(null);
 
   const handleFileUpload = (event) => {
@@ -38,32 +41,24 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
 
   const purchaseTicketViaPrivateKey = async () => {
     setOpen(false);
-    
     try{
-    var web3 = new Web3("https://rpc2.sepolia.org");
+      let gasPrice = await web3.eth.getGasPrice();
+      const tx = {
+          from: userWalletAddress,
+          to: ticketContractAddress,
+          gas: 2000000,
+          data: contract.methods.buyToken().encodeABI(),
+          value: web3.utils.toWei((numberOfTicketsToBuy * costPerTicket), 'ether'),
+          gasPrice: gasPrice
+      };
 
-    var contract = new web3.eth.Contract(IERC20_ABI, ticketContractAddress);
-    var transaction = contract.methods.buyToken();
-    var encodedABI = transaction.encodeABI();
-    var amount = 0.0005;
-    let gasPrice = await web3.eth.getGasPrice();
-    const tx = {
-        from: userWalletAddress,
-        to: ticketContractAddress,
-        gas: 2000000,
-        data: encodedABI,
-        value: web3.utils.toWei(amount, 'ether'),
-    };
-
-    console.log(tx);
-    tx.gasPrice = gasPrice;
-    console.log(gasPrice);
-
-    web3.eth.accounts.signTransaction(tx, privateKey).then(function(signedTx){
-      console.log(JSON.stringify(signedTx));
-      web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-    });
-
+      web3.eth.accounts.signTransaction(tx, privateKey).then(function(signedTx){
+        console.log("Signed transaction: " + JSON.stringify(signedTx));
+        web3.eth.sendSignedTransaction(signedTx.rawTransaction).then(function(receipt){
+          console.log("Sent signed transaction: " + JSON.stringify(receipt));
+          approveTicketTransfer();
+        });
+      });
     } catch(e) {
       console.log(e);
     }
@@ -71,35 +66,53 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
 
   const purchaseTicketViaKeystore = async () => {
     setOpen(false);
-    
     try{
-      var web3 = new Web3("https://rpc2.sepolia.org");
 
       var wallet = await web3.eth.accounts.decrypt(fileKeystoreContent, password);
       setUserWalletAddress(wallet.address);
 
-      var contract = new web3.eth.Contract(IERC20_ABI, ticketContractAddress);
-      var transaction = contract.methods.buyToken();
-      var encodedABI = transaction.encodeABI();
-      var amount = 0.0005;
       let gasPrice = await web3.eth.getGasPrice();
       const tx = {
           from: wallet.address,
           to: ticketContractAddress,
           gas: 2000000,
-          data: encodedABI,
-          value: web3.utils.toWei(amount, 'ether'),
+          data: contract.methods.buyToken().encodeABI(),
+          value: web3.utils.toWei((numberOfTicketsToBuy * costPerTicket), 'ether'),
+          gasPrice: gasPrice
       };
 
-      console.log(tx);
-      tx.gasPrice = gasPrice;
-      console.log(gasPrice);
-
       web3.eth.accounts.signTransaction(tx, wallet.privateKey).then(function(signedTx){
-        console.log(JSON.stringify(signedTx));
-        web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+        console.log("Signed transaction: " + JSON.stringify(signedTx));
+        web3.eth.sendSignedTransaction(signedTx.rawTransaction).then(function(receipt){
+          console.log("Sent signed transaction: " + JSON.stringify(receipt));
+          approveTicketTransfer();
+        });
       });
 
+    } catch(e) {
+      console.log(e);
+    }
+  }
+
+  const approveTicketTransfer = async () => {
+    try{
+      var contract = new web3.eth.Contract(IERC20_ABI, ticketContractAddress);
+      let gasPrice = await web3.eth.getGasPrice();
+      const approve_tx = {
+        from: userWalletAddress,
+        to: ticketContractAddress,
+        gas: 2000000,
+        gasPrice: gasPrice,
+        // Approve the vendor to transfer the tickets back to the contract
+        // When user buys a ticket they approve ticket transfer
+        // This allows the vendor send the ticket to the vendor address without needing the users private key
+        data: contract.methods.approve(vendorAddress, numberOfTicketsToBuy).encodeABI(),
+      };
+      var signedTx = await web3.eth.accounts.signTransaction(approve_tx, privateKey);
+      console.log("here1");
+      var receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+      console.log("here2");
+      return receipt;
     } catch(e) {
       console.log(e);
     }
@@ -126,13 +139,13 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
             />
             <TextInput 
               labelText="Cost Per Ticket" 
-              value={0.005 + " ETH"} 
+              value={costPerTicket + " ETH"} 
               readOnly 
               id="ticketCost" 
             />
             <TextInput 
               labelText="Total Ticket Cost" 
-              value={numberOfTicketsToBuy * 0.005 + " ETH"} 
+              value={numberOfTicketsToBuy * costPerTicket + " ETH"} 
               readOnly 
               id="totalCost" 
             />
@@ -180,7 +193,7 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
               <br/>
               <Button onClick={()=>setOpen(true)}>Purchase Ticket</Button>
               <Modal open={open} onRequestClose={() => setOpen(false)} onRequestSubmit={purchaseTicketViaPrivateKey} modalHeading="Confirm Ticket Purchase" primaryButtonText="Confirm" secondaryButtonText="Cancel">
-                <p>Are you sure you want to purchase {numberOfTicketsToBuy} ticket(s) for a total of {numberOfTicketsToBuy * 0.005} ETH?</p>
+                <p>Are you sure you want to purchase {numberOfTicketsToBuy} ticket(s) for a total of {numberOfTicketsToBuy * costPerTicket} ETH?</p>
               </Modal>
             </TabPanel>
           </TabPanels>
