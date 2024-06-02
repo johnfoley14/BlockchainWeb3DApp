@@ -1,20 +1,17 @@
-import { Tile, TextInput, Button, InlineNotification } from '@carbon/react';
+import { Tile, TextInput, Button } from '@carbon/react';
 import '@carbon/react/scss/components/notification/_index.scss';
 import Web3 from 'web3';
 import { IERC20_ABI } from '../utils/IERC20_ABI';
 // import { validator } from 'web3-validator';
 import { useState } from 'react';
 
-export default function CheckBalance({walletAddress, setWalletAddress, ticketContractAddress}) {
+export default function CheckBalance({walletAddress, setWalletAddress, ticketContractAddress, showToast}) {
 
     const [userEthBalance, setUserEthBalance] = useState('');
     const [userTicketBalance, setUserTicketBalance] = useState('');
     const [venueTicketBalance, setVenueTicketBalance] = useState('');
     const [receivedBalance, setReceivedBalance] = useState(false);
     
-    const [error, setError] = useState('');
-    const [showError, setShowError] = useState(false);
-    const [showSuccess, setShowSuccess] = useState(false);
 
     const checkBalance = async () => {
 
@@ -38,18 +35,10 @@ export default function CheckBalance({walletAddress, setWalletAddress, ticketCon
                 setVenueTicketBalance(balance.toString());
             });
 
-            setShowSuccess(true);
-            setTimeout(() => {
-                setShowSuccess(false);
-            }, 3000);
+            showToast('Balance checked successfully', false);
 
         } else {
-            // display an error message if the wallet address is invalid
-            setError('Invalid wallet address');
-            setShowError(true);
-            setTimeout(() => {
-                setShowError(false);
-            }, 3000);
+            showToast('Invalid wallet address', true);
         }
 
     }
@@ -57,12 +46,6 @@ export default function CheckBalance({walletAddress, setWalletAddress, ticketCon
     return (
         <div style={{ marginTop: '5%', marginLeft: '15%', marginRight: '15%', marginBottom:'5%', border: '5px solid rgb(0, 175, 117)' }}>
             <Tile>
-                {showError && <div style={{position:'absolute', top:'-20%', right:'-20%'}}>
-                    <InlineNotification kind="error" title={error} />
-                </div>}
-                {showSuccess && <div style={{position:'absolute', top:'-20%', right:'-20%'}}>
-                    <InlineNotification kind="success" title="Successfully Received Balance" />
-                </div>}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <h3>Check Balance</h3>
                     <TextInput

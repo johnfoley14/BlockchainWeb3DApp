@@ -11,7 +11,7 @@ import '@carbon/react/scss/components/number-input/_index.scss';
 import Web3 from 'web3';
 import { IERC20_ABI } from '../utils/IERC20_ABI';
 
-export default function TransferTicketPage({userWalletAddress, ticketContractAddress, setUserWalletAddress, password, setPassword}) {
+export default function TransferTicketPage({userWalletAddress, ticketContractAddress, setUserWalletAddress, password, setPassword, showToast}) {
 
   
   const [privateKey, setPrivateKey] = useState("");
@@ -32,12 +32,13 @@ export default function TransferTicketPage({userWalletAddress, ticketContractAdd
                   const jsonContent = JSON.parse(e.target.result);
                   setFileKeystoreContent(jsonContent);
               } catch (error) {
-                  console.error("Invalid JSON file");
+                showToast("Invalid JSON file", true);
               }
           };
           reader.readAsText(file);
       } else {
           console.error("Please upload a valid JSON file");
+          showToast("Invalid JSON file", true);
       }
   };
 
@@ -61,6 +62,7 @@ export default function TransferTicketPage({userWalletAddress, ticketContractAdd
       web3.eth.sendSignedTransaction(signedTx.rawTransaction)
       .once('transactionHash', function(hash) {
           console.log('Transaction Hash:', hash);
+          showToast(`Successful transfer: ${hash}`, false);
       })
       .once('receipt', function(receipt) {
           console.log('Receipt:', receipt);
@@ -71,6 +73,7 @@ export default function TransferTicketPage({userWalletAddress, ticketContractAdd
 
     } catch(e) {
       console.log(e);
+      showToast(`Error: ${e}`, true)
     }
   }
 
@@ -91,13 +94,25 @@ export default function TransferTicketPage({userWalletAddress, ticketContractAdd
           gasPrice: gasPrice,
       };
 
-      web3.eth.accounts.signTransaction(tx, wallet.privateKey).then(function(signedTx){
+      var signedTx = await web3.eth.accounts.signTransaction(tx, wallet.privateKey).then(function(signedTx){
         console.log(JSON.stringify(signedTx));
-        web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+      });
+
+      web3.eth.sendSignedTransaction(signedTx.rawTransaction)
+      .once('transactionHash', function(hash) {
+          console.log('Transaction Hash:', hash);
+          showToast(`Successful transfer: ${hash}`, false);
+      })
+      .once('receipt', function(receipt) {
+          console.log('Receipt:', receipt);
+      })
+      .on('error', function(error) {
+          console.error('Error:', error);
       });
 
     } catch(e) {
       console.log(e);
+      showToast(`Error: ${e}`, true)
     }
   }
 
@@ -178,50 +193,3 @@ export default function TransferTicketPage({userWalletAddress, ticketContractAdd
     </div>
   )
 }
-
-
-
-
-      // const approve_tx = {
-      //   from: userWalletAddress,
-      //   to: ticketContractAddress,
-      //   gas: 2000000,
-      //   gasPrice: gasPrice,
-      //   data: contract.methods.approve(userWalletAddress, numberOfTicketsToSend).encodeABI(),
-      //   value: 0,
-      // };
-      // console.log("made tx")
-
-      // var signedTx = await web3.eth.accounts.signTransaction(approve_tx, privateKey);
-      // console.log(signedTx);
-      // // console.log("here2")
-
-
-      // var here = await web3.eth.sendSignedTransaction(signedTx.rawTransaction).then(function(receipt){
-      //   console.log("sent signed transaction")
-      // });
-
-      // console.log("here1")
-
-
-      
-      // console.log("here2")
-
-      // const transfer_tx = {
-      //     from: userWalletAddress,
-      //     to: ticketContractAddress,
-      //     gas: 2000000,
-      //     gasPrice: gasPrice,
-      //     data: contract.methods.transferFrom(userWalletAddress, recipientAddress, numberOfTicketsToSend).encodeABI(),
-      //     value: 0,
-      // };
-
-      // console.log("made transfer tx");
-
-      // web3.eth.accounts.signTransaction(transfer_tx, privateKey).then(function(signedTx){
-      //   console.log(JSON.stringify(signedTx));
-      //   web3.eth.sendSignedTransaction(signedTx.rawTransaction).then(function(receipt){
-      //     console.log("sent signed transaction")
-      //     console.log(receipt);
-      //   });
-      // });

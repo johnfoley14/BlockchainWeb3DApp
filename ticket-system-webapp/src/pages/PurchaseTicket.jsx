@@ -10,7 +10,7 @@ import '@carbon/react/scss/components/file-uploader/_index.scss';
 import Web3 from 'web3';
 import { IERC20_ABI } from '../utils/IERC20_ABI';
 
-export default function PurchaseTicketPage({userWalletAddress, ticketContractAddress, setUserWalletAddress, vendorAddress, password, setPassword}) {
+export default function PurchaseTicketPage({userWalletAddress, ticketContractAddress, setUserWalletAddress, vendorAddress, password, setPassword, showToast}) {
 
   var web3 = new Web3("https://rpc2.sepolia.org");
   var contract = new web3.eth.Contract(IERC20_ABI, ticketContractAddress);
@@ -18,7 +18,7 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
   const [privateKey, setPrivateKey] = useState("");
   const [numberOfTicketsToBuy, setNumberOfTicketsToBuy] = useState(0);
   const [open, setOpen] = useState(false);
-  const [costPerTicket, setCostPerTicket] = useState(0.00001);
+  const costPerTicket = 0.00001;
   const [fileKeystoreContent, setFileKeystoreContent] = useState(null);
 
   const handleFileUpload = (event) => {
@@ -30,12 +30,12 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
                   const jsonContent = JSON.parse(e.target.result);
                   setFileKeystoreContent(jsonContent);
               } catch (error) {
-                  console.error("Invalid JSON file");
+                  showToast("Invalid JSON file", true);
               }
           };
           reader.readAsText(file);
       } else {
-          console.error("Please upload a valid JSON file");
+          showToast("Please upload a valid JSON file", true);
       }
   };
 
@@ -43,27 +43,27 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
     setOpen(false);
     try{
       let gasPrice = await web3.eth.getGasPrice();
+      const gas = await contract.methods.buyToken().estimateGas({ from: userWalletAddress, value: web3.utils.toWei((numberOfTicketsToBuy * costPerTicket), 'ether') });
+      await approveTicketTransfer();
       const tx = {
           from: userWalletAddress,
           to: ticketContractAddress,
-          gas: 2000000,
+          gas: gas,
           data: contract.methods.buyToken().encodeABI(),
           value: web3.utils.toWei((numberOfTicketsToBuy * costPerTicket), 'ether'),
           gasPrice: gasPrice
       };
 
-      web3.eth.accounts.signTransaction(tx, privateKey).then(function(signedTx){
-        console.log("Signed transaction: " + JSON.stringify(signedTx));
-        web3.eth.sendSignedTransaction(signedTx.rawTransaction).then(function(receipt){
-          console.log("Sent signed transaction: " + JSON.stringify(receipt));
-          approveTicketTransfer();
-        });
-      });
+      const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
+      await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+      console.log("Purchased Ticket");
+      showToast("Purchased Ticket", false);
     } catch(e) {
       console.log(e);
+      showToast(`Error: ${e}`, true);
     }
   }
-
+  
   const purchaseTicketViaKeystore = async () => {
     setOpen(false);
     try{
@@ -72,47 +72,43 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
       setUserWalletAddress(wallet.address);
 
       let gasPrice = await web3.eth.getGasPrice();
+      await approveTicketTransfer();
       const tx = {
           from: wallet.address,
           to: ticketContractAddress,
-          gas: 2000000,
+          gas: 3000000,
           data: contract.methods.buyToken().encodeABI(),
           value: web3.utils.toWei((numberOfTicketsToBuy * costPerTicket), 'ether'),
           gasPrice: gasPrice
       };
 
-      web3.eth.accounts.signTransaction(tx, wallet.privateKey).then(function(signedTx){
-        console.log("Signed transaction: " + JSON.stringify(signedTx));
-        web3.eth.sendSignedTransaction(signedTx.rawTransaction).then(function(receipt){
-          console.log("Sent signed transaction: " + JSON.stringify(receipt));
-          approveTicketTransfer();
-        });
-      });
+      const signedTx = await web3.eth.accounts.signTransaction(tx, wallet.privateKey);
+      await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+      console.log("Purchased Ticket");
+      showToast("Successfully purchased ticket", false);
 
     } catch(e) {
       console.log(e);
+      showToast(`Error: ${e}`, true);
     }
   }
 
   const approveTicketTransfer = async () => {
     try{
-      var contract = new web3.eth.Contract(IERC20_ABI, ticketContractAddress);
       let gasPrice = await web3.eth.getGasPrice();
+      const gasEstimate = await contract.methods.approve(vendorAddress, numberOfTicketsToBuy).estimateGas({ from: userWalletAddress }); 
+      // Approve sending the tickets to the vendor.
+      // This allows the ticket checker to send the tickets to the vendor without needing the users private key
       const approve_tx = {
         from: userWalletAddress,
         to: ticketContractAddress,
-        gas: 2000000,
+        gas: gasEstimate,
         gasPrice: gasPrice,
-        // Approve the vendor to transfer the tickets back to the contract
-        // When user buys a ticket they approve ticket transfer
-        // This allows the vendor send the ticket to the vendor address without needing the users private key
         data: contract.methods.approve(vendorAddress, numberOfTicketsToBuy).encodeABI(),
       };
       var signedTx = await web3.eth.accounts.signTransaction(approve_tx, privateKey);
-      console.log("here1");
-      var receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-      console.log("here2");
-      return receipt;
+      await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+      console.log(`Approved ${vendorAddress} redeem tickets belonging to ${userWalletAddress}	`);
     } catch(e) {
       console.log(e);
     }

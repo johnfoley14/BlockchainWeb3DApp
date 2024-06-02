@@ -24,6 +24,9 @@ const Header = ({ isLoggedIn }) => {
             <li style={{ width: '78px', height: '78px'}}>
               <Link to="ticketTransfer" style={{ whiteSpace: 'nowrap' }}>Transfer Ticket</Link>
             </li>
+            <li style={{ width: '78px', height: '78px'}}>
+              <Link to="redeemTicket" style={{ whiteSpace: 'nowrap' }}>Redeem Ticket</Link>
+            </li>
           </ul>
         </nav>
         <Outlet />

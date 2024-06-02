@@ -5,19 +5,16 @@ import '@carbon/react/scss/components/button/_index.scss';
 import '@carbon/react/scss/components/radio-button/_index.scss';
 import '@carbon/react/scss/components/notification/_index.scss';
 import { useState } from 'react';
-import { Button, TextInput, FormGroup, Tile, InlineNotification, CopyButton } from '@carbon/react';
+import { Button, TextInput, FormGroup, Tile, CopyButton } from '@carbon/react';
 import Web3 from 'web3';
 
-const CreateWallet = () => {
+export default function CreateWallet({setUserWalletAddress, showToast}){
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [walletCreated, setWalletCreated] = useState(false);
     const [walletAddress, setWalletAddress] = useState('');
     const [privateKey, setPrivateKey] = useState('');
-    const [error, setError] = useState('');
-    const [showError, setShowError] = useState(false);
     const [keystoreString, setKeystoreString] = useState('');
-    const [showSuccess, setShowSuccess] = useState(false);
 
     const updateWalletState = (address, keystore, privateKey) => {
         setWalletCreated(true);
@@ -30,19 +27,11 @@ const CreateWallet = () => {
         try {
             
             if (password !== confirmPassword) {
-                setError('Passwords must match');
-                setShowError(true);
-                setTimeout(() => {
-                    setShowError(false);
-                }, 3000);
+                showToast('Passwords must match', true);
                 return;
             }
             if (!password || password.length < 9) {
-                setError('Enter a valid 9 letter password.');
-                setShowError(true);
-                setTimeout(() => {
-                    setShowError(false);
-                }, 3000);
+                showToast('Enter a valid 9 character password', true);
                 return;
             }
 
@@ -53,17 +42,11 @@ const CreateWallet = () => {
             var keystore = await web3.eth.accounts.encrypt(wallet.privateKey, password);
 
             updateWalletState(wallet.address, JSON.stringify(keystore, null, 2), wallet.privateKey);
-            setShowSuccess(true);
-            setTimeout(() => {
-                setShowSuccess(false);
-            }, 3000);
+            showToast('Wallet successfully generated', false);
+            setUserWalletAddress(wallet.address);
 
         } catch (err) {
-            setError('Error creating wallet. Please try again.');
-            console.error(err);
-            setTimeout(() => {
-                setShowError(false);
-            }, 3000);
+            showToast('Error creating wallet', true);
         }
 
 
@@ -122,12 +105,6 @@ const CreateWallet = () => {
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
                         />
-                        {showError && <div style={{position:'absolute', top:'-20%', right:'-20%'}}>
-                                <InlineNotification kind="error" title={error} />
-                            </div>}
-                        {showSuccess && <div style={{position:'absolute', top:'-20%', right:'-20%'}}>
-                            <InlineNotification kind="success" title="Wallet Successfully Generated" />
-                        </div>}
                     </FormGroup>
                     <br />
                     <Button onClick={generateWallet}>Generate Wallet</Button>
@@ -158,5 +135,3 @@ const CreateWallet = () => {
         </div>
     );
 };
-
-export default CreateWallet;
