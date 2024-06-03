@@ -13,16 +13,18 @@ import { IERC20_ABI } from '../utils/IERC20_ABI';
 
 export default function TransferTicketPage({userWalletAddress, ticketContractAddress, setUserWalletAddress, password, setPassword, showToast}) {
 
-  
+  // declaration of state variables for page
   const [privateKey, setPrivateKey] = useState("");
   const [numberOfTicketsToSend, setNumberOfTicketsToSend] = useState(0);
   const [open, setOpen] = useState(false);
   const [fileKeystoreContent, setFileKeystoreContent] = useState(null);
   const [recipientAddress, setRecipientAddress] = useState('');
   
+  // connect to the SePolia network and create the contract object
   var web3 = new Web3("https://rpc2.sepolia.org");
   var contract = new web3.eth.Contract(IERC20_ABI, ticketContractAddress);
 
+  // helper function to handle the keystore JSON file upload
   const handleFileUpload = (event) => {
       const file = event.target.files[0];
       if (file && file.type === "application/json") {
@@ -42,23 +44,27 @@ export default function TransferTicketPage({userWalletAddress, ticketContractAdd
       }
   };
 
+  // function to send the ticket using the private key
   const sendTicketViaPrivateKey = async () => {
     setOpen(false);
     
+    // wrap in try catch block to handle errors
     try{
-      
+      // get current gas price
       let gasPrice = await web3.eth.getGasPrice();
+
+      // create the transfer ticket transaction object using recipient address and number of tickets
       const tx = {
         from: userWalletAddress,
         to: ticketContractAddress,
-        gas: 2000000,
         gasPrice: gasPrice,
         data: contract.methods.transfer(recipientAddress, numberOfTicketsToSend).encodeABI()
       };
 
+      // sign the transaction using the private key
       const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
 
-      // Send the transaction
+      // send the transaction
       web3.eth.sendSignedTransaction(signedTx.rawTransaction)
       .once('transactionHash', function(hash) {
           console.log('Transaction Hash:', hash);
@@ -72,20 +78,26 @@ export default function TransferTicketPage({userWalletAddress, ticketContractAdd
       });
 
     } catch(e) {
+      // log the error and show error notification
       console.log(e);
       showToast(`Error: ${e}`, true)
     }
   }
 
+  // function to send the ticket using the keystore file
   const sendTicketViaKeystore = async () => {
     setOpen(false);
     
     try{
 
+      // decrypt the keystore file using the password
       var wallet = await web3.eth.accounts.decrypt(fileKeystoreContent, password);
       setUserWalletAddress(wallet.address);
 
+      // get current gas price
       let gasPrice = await web3.eth.getGasPrice();
+      
+      // create the transfer ticket transaction object using recipient address and number of tickets
       const tx = {
           from: wallet.address,
           to: ticketContractAddress,
@@ -94,10 +106,12 @@ export default function TransferTicketPage({userWalletAddress, ticketContractAdd
           gasPrice: gasPrice,
       };
 
+      // sign the transaction using the wallet private key, extracted from the decrypted keystore file
       var signedTx = await web3.eth.accounts.signTransaction(tx, wallet.privateKey).then(function(signedTx){
         console.log(JSON.stringify(signedTx));
       });
 
+      // send the transaction to the network
       web3.eth.sendSignedTransaction(signedTx.rawTransaction)
       .once('transactionHash', function(hash) {
           console.log('Transaction Hash:', hash);
@@ -111,6 +125,7 @@ export default function TransferTicketPage({userWalletAddress, ticketContractAdd
       });
 
     } catch(e) {
+      // log the error and show error notification
       console.log(e);
       showToast(`Error: ${e}`, true)
     }
@@ -119,13 +134,16 @@ export default function TransferTicketPage({userWalletAddress, ticketContractAdd
   return (
     <div>
       <Tile style={{ marginTop: '5%', marginLeft: '15%', marginRight: '15%', marginBottom:'5%', border: '5px solid rgb(0, 175, 117)' }}>
+        -- use carbon components Tabs to create two tabs for the user to choose between uploading a keystore file or manually entering the private key and wallet address --
         <Tabs>
           <TabList aria-label="List of tabs" contained>
             <Tab>Upload Keystore File</Tab>
             <Tab>Manual Entry</Tab>
           </TabList>
+          -- create text inputs that are consistent between both Tabs --
           <div style={{ marginLeft:'2%'}}>
             <br/>
+            -- text input to specify the number of tickets to send --
             <TextInput
               id="numberOfTicketsToSend"
               labelText="Number of Tickets"
@@ -143,6 +161,7 @@ export default function TransferTicketPage({userWalletAddress, ticketContractAdd
             />
           </div>
           <TabPanels>
+            -- TabPanel for uploading the keystore file --
             <TabPanel>
               <FileUploader
                 accept={['.json']}
@@ -166,6 +185,7 @@ export default function TransferTicketPage({userWalletAddress, ticketContractAdd
                 <p>Are you sure you want to transfer {numberOfTicketsToSend} ticket(s) to the following address: {recipientAddress}</p>
               </Modal>
             </TabPanel>
+            -- TabPanel for manually entering the private key and wallet address --
             <TabPanel>
               <TextInput
                 id="walletAddress"

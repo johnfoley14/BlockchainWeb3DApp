@@ -12,15 +12,18 @@ import { useState } from 'react';
 
 function App() {
 
-  const [userWalletAddress, setUserWalletAddress] = useState('0x6Fc02B71f5DECD64426Cf710F43Ec93EEdD13390');  
-  const ticketContractAddress = '0x0cce4E7d5DE14Ce4efd7Dd4983ab26B8e9aaeA3F';
-  const vendorAddress = '0xb08BBB9Ba40F75eD2d0675E9dd343241090d70A8';
+  // declaration of state variables as well as the contract address and vendor address
+  // feel free to change the vendor
+  const [userWalletAddress, setUserWalletAddress] = useState('');  
+  const ticketContractAddress = '0x94dCB7c12F368D58a81C0C1Eb0d98F5a77ec3591';
+  const doormanAddress = '0xb08BBB9Ba40F75eD2d0675E9dd343241090d70A8';
   const [password, setPassword] = useState('');
 
   const [message, setMessage] = useState('');
   const [successToastOpen, setSuccessToastOpen] = useState(false);
   const [isErrorMessage, setIsErrorMessage] = useState(true);
 
+  // function to show notification and messages to the user
   const showToast = (message, isErrorMessage) => {
     setMessage(message);
     setIsErrorMessage(isErrorMessage);
@@ -42,8 +45,10 @@ function App() {
       />
     )}
       <BrowserRouter>
+        -- define the header component which links to the different pages --
         <Header/> 
         <Routes>
+          -- define routes for different pages --
           <Route index element={<HomePage/>} />
           <Route path="createWallet" element={<CreateWalletPage
           setUserWalletAddress={setUserWalletAddress}
@@ -57,7 +62,7 @@ function App() {
           userWalletAddress={userWalletAddress} 
           ticketContractAddress={ticketContractAddress} 
           setUserWalletAddress={setUserWalletAddress}
-          vendorAddress={vendorAddress}
+          doormanAddress={doormanAddress}
           password={password}
           setPassword={setPassword}
           showToast={showToast}/>} />
@@ -65,7 +70,6 @@ function App() {
           userWalletAddress={userWalletAddress} 
           ticketContractAddress={ticketContractAddress} 
           setUserWalletAddress={setUserWalletAddress}
-          vendorAddress={vendorAddress}
           password={password}
           setPassword={setPassword}
           showToast={showToast}/>} />
@@ -73,7 +77,8 @@ function App() {
           userWalletAddress={userWalletAddress}
           setUserWalletAddress={setUserWalletAddress}
           ticketContractAddress={ticketContractAddress}
-          vendorAddress={vendorAddress}/>} />
+          doormanAddress={doormanAddress}
+          showToast={showToast}/>} />
         </Routes>
     </BrowserRouter>
     </div>

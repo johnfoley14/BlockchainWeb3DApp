@@ -9,6 +9,8 @@ import { Button, TextInput, FormGroup, Tile, CopyButton } from '@carbon/react';
 import Web3 from 'web3';
 
 export default function CreateWallet({setUserWalletAddress, showToast}){
+
+    // declaration of state variables for page
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [walletCreated, setWalletCreated] = useState(false);
@@ -16,6 +18,7 @@ export default function CreateWallet({setUserWalletAddress, showToast}){
     const [privateKey, setPrivateKey] = useState('');
     const [keystoreString, setKeystoreString] = useState('');
 
+    // on generation of wallet update the state variables
     const updateWalletState = (address, keystore, privateKey) => {
         setWalletCreated(true);
         setWalletAddress(address);
@@ -24,23 +27,28 @@ export default function CreateWallet({setUserWalletAddress, showToast}){
     };
 
     const generateWallet = async () => {
+        // wrap in try catch block to handle errors
         try {
-            
+            // check if password and confirm password match
             if (password !== confirmPassword) {
                 showToast('Passwords must match', true);
                 return;
             }
+            // check if password is at least 9 characters long
             if (!password || password.length < 9) {
                 showToast('Enter a valid 9 character password', true);
                 return;
             }
 
             const web3 = new Web3("https://rpc2.sepolia.org");
+            // create a new wallet
             const wallet = web3.eth.accounts.create();
             console.log(wallet);
 
+            // encrypt the private key with the password
             var keystore = await web3.eth.accounts.encrypt(wallet.privateKey, password);
 
+            // update the state variables
             updateWalletState(wallet.address, JSON.stringify(keystore, null, 2), wallet.privateKey);
             showToast('Wallet successfully generated', false);
             setUserWalletAddress(wallet.address);
@@ -48,10 +56,9 @@ export default function CreateWallet({setUserWalletAddress, showToast}){
         } catch (err) {
             showToast('Error creating wallet', true);
         }
-
-
     };
 
+    // function to copy wallet address to clipboard
     const copyWalletAddressToClipboard = () => {
         navigator.clipboard.writeText(walletAddress)
             .then(() => {
@@ -62,6 +69,7 @@ export default function CreateWallet({setUserWalletAddress, showToast}){
             });
     };
 
+    // function to copy private key to clipboard
     const copyPrivateKeyToClipboard = () => {
         navigator.clipboard.writeText(privateKey)
             .then(() => {
@@ -72,16 +80,21 @@ export default function CreateWallet({setUserWalletAddress, showToast}){
             });
     };
 
+    // function to download wallet keystore as JSON file
     const downloadWalletKeystore = () => {
-        const blob = new Blob([keystoreString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'data.json';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        try{
+            const blob = new Blob([keystoreString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch(e) {
+            console.log(e);
+        }
     };
 
     return (

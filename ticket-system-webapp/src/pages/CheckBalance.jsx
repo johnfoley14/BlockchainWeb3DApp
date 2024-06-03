@@ -2,7 +2,6 @@ import { Tile, TextInput, Button } from '@carbon/react';
 import '@carbon/react/scss/components/notification/_index.scss';
 import Web3 from 'web3';
 import { IERC20_ABI } from '../utils/IERC20_ABI';
-// import { validator } from 'web3-validator';
 import { useState } from 'react';
 
 export default function CheckBalance({walletAddress, setWalletAddress, ticketContractAddress, showToast}) {
@@ -17,6 +16,7 @@ export default function CheckBalance({walletAddress, setWalletAddress, ticketCon
 
         const web3 = new Web3("https://rpc2.sepolia.org");
 
+        // check if the wallet address is valid
         if (web3.utils.isAddress(walletAddress) && web3.utils.isAddress(ticketContractAddress)) {
                 
             // get the eth balance of the wallet
@@ -25,19 +25,22 @@ export default function CheckBalance({walletAddress, setWalletAddress, ticketCon
             setReceivedBalance(true);
             });
 
-            
+            // get the ticket balance of the users wallet
             const contract = new web3.eth.Contract(IERC20_ABI, ticketContractAddress);
             contract.methods.balanceOf(walletAddress).call().then(function(balance) {
                 setUserTicketBalance(balance.toString());
             });
 
+            // get the ticket balance remaining for the venue
             contract.methods.balanceOf(ticketContractAddress).call().then(function(balance) {
                 setVenueTicketBalance(balance.toString());
             });
 
+            // show success message
             showToast('Balance checked successfully', false);
 
         } else {
+            // if user enters an invalid wallet address, show error notification
             showToast('Invalid wallet address', true);
         }
 

@@ -10,17 +10,20 @@ import '@carbon/react/scss/components/file-uploader/_index.scss';
 import Web3 from 'web3';
 import { IERC20_ABI } from '../utils/IERC20_ABI';
 
-export default function PurchaseTicketPage({userWalletAddress, ticketContractAddress, setUserWalletAddress, vendorAddress, password, setPassword, showToast}) {
+export default function PurchaseTicketPage({userWalletAddress, ticketContractAddress, setUserWalletAddress, doormanAddress, password, setPassword, showToast}) {
 
+  // connect to the SePolia network and create the contract object
   var web3 = new Web3("https://rpc2.sepolia.org");
   var contract = new web3.eth.Contract(IERC20_ABI, ticketContractAddress);
   
+  // declaration of state variables for page
   const [privateKey, setPrivateKey] = useState("");
   const [numberOfTicketsToBuy, setNumberOfTicketsToBuy] = useState(0);
   const [open, setOpen] = useState(false);
-  const costPerTicket = 0.00001;
+  const costPerTicket = 0.0001;
   const [fileKeystoreContent, setFileKeystoreContent] = useState(null);
 
+  // helper function to handle the keystore JSON file upload
   const handleFileUpload = (event) => {
       const file = event.target.files[0];
       if (file && file.type === "application/json") {
@@ -39,76 +42,108 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
       }
   };
 
+  // function to purchase tickets using the private key
   const purchaseTicketViaPrivateKey = async () => {
     setOpen(false);
     try{
+      // get the current gas price
       let gasPrice = await web3.eth.getGasPrice();
-      const gas = await contract.methods.buyToken().estimateGas({ from: userWalletAddress, value: web3.utils.toWei((numberOfTicketsToBuy * costPerTicket), 'ether') });
-      await approveTicketTransfer();
+
+      // create the buyToken transaction object
+      // include the value based off the specified number of tickets and cost per ticket
       const tx = {
           from: userWalletAddress,
           to: ticketContractAddress,
-          gas: gas,
           data: contract.methods.buyToken().encodeABI(),
           value: web3.utils.toWei((numberOfTicketsToBuy * costPerTicket), 'ether'),
           gasPrice: gasPrice
       };
 
+      // sign the transaction with the buyers private key
       const signedTx = await web3.eth.accounts.signTransaction(tx, privateKey);
+      console.log("Sending purchase transaction");
+
+      // send the signed transaction to the network
       await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
       console.log("Purchased Ticket");
       showToast("Purchased Ticket", false);
+
+      // call approveTicketTransfer to allow the doorman to transfer the tickets
+      // this allows the doorman to redeem tickets on behalf of the user
+      await approveTicketTransfer();
     } catch(e) {
+      // catch any errors and show the error in a notification
       console.log(e);
       showToast(`Error: ${e}`, true);
     }
   }
   
+  // function to purchase tickets using the keystore file
   const purchaseTicketViaKeystore = async () => {
     setOpen(false);
     try{
 
+      // decrypt the keystore file with the password, extract the wallet address
       var wallet = await web3.eth.accounts.decrypt(fileKeystoreContent, password);
       setUserWalletAddress(wallet.address);
+      setPrivateKey(wallet.privateKey);
 
+      // get the current gas price
       let gasPrice = await web3.eth.getGasPrice();
-      await approveTicketTransfer();
+
+      // create the buyToken transaction object
+      // include the value based off the specified number of tickets and cost per ticket
       const tx = {
           from: wallet.address,
           to: ticketContractAddress,
-          gas: 3000000,
           data: contract.methods.buyToken().encodeABI(),
           value: web3.utils.toWei((numberOfTicketsToBuy * costPerTicket), 'ether'),
           gasPrice: gasPrice
       };
 
+      // sign the transaction with the buyers private key
       const signedTx = await web3.eth.accounts.signTransaction(tx, wallet.privateKey);
+      console.log("Sending purchase transaction");
+
+      // send the signed transaction to the network
       await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
       console.log("Purchased Ticket");
-      showToast("Successfully purchased ticket", false);
+      showToast("Purchased Ticket", false);
 
+      // call approveTicketTransfer to allow the doorman to transfer the tickets
+      // this allows the doorman to redeem tickets on behalf of the user
+      await approveTicketTransfer();
     } catch(e) {
+      // catch any errors and show the error in a notification
       console.log(e);
       showToast(`Error: ${e}`, true);
     }
   }
 
   const approveTicketTransfer = async () => {
+    // wrap in try catch block to handle errors
     try{
+      // get the current gas price
       let gasPrice = await web3.eth.getGasPrice();
-      const gasEstimate = await contract.methods.approve(vendorAddress, numberOfTicketsToBuy).estimateGas({ from: userWalletAddress }); 
-      // Approve sending the tickets to the vendor.
-      // This allows the ticket checker to send the tickets to the vendor without needing the users private key
+      // estimate the gas required for the approve transaction
+      const gasEstimate = await contract.methods.approve(doormanAddress, numberOfTicketsToBuy).estimateGas({ from: userWalletAddress }); 
+
+      // create the approve transaction object
       const approve_tx = {
         from: userWalletAddress,
         to: ticketContractAddress,
         gas: gasEstimate,
         gasPrice: gasPrice,
-        data: contract.methods.approve(vendorAddress, numberOfTicketsToBuy).encodeABI(),
+        data: contract.methods.approve(doormanAddress, numberOfTicketsToBuy).encodeABI(),
       };
+
+      // sign the transaction with the buyers private key
       var signedTx = await web3.eth.accounts.signTransaction(approve_tx, privateKey);
+      console.log("Sending approval transaction");
+
+      // send the signed approve transaction to the network
       await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-      console.log(`Approved ${vendorAddress} redeem tickets belonging to ${userWalletAddress}	`);
+      console.log(`Approved ${doormanAddress} redeem tickets belonging to ${userWalletAddress}	`);
     } catch(e) {
       console.log(e);
     }
@@ -117,13 +152,16 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
   return (
     <div>
       <Tile style={{ marginTop: '5%', marginLeft: '15%', marginRight: '15%', marginBottom:'5%', border: '5px solid rgb(0, 175, 117)' }}>
+        -- use carbon components Tabs to create two tabs for the user to choose between uploading a keystore file or manually entering the private key and wallet address --
         <Tabs>
           <TabList aria-label="List of tabs" contained>
             <Tab>Upload Keystore File</Tab>
             <Tab>Manual Entry</Tab>
           </TabList>
+          -- create text inputs that are consistent between both Tabs --
           <div style={{ marginLeft:'2%'}}>
             <br/>
+            -- text input to specify the number of tickets to buy --
             <TextInput
               id="numberOfTicketsToBuy"
               labelText="Number of Tickets"
@@ -147,6 +185,8 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
             />
           </div>
           <TabPanels>
+
+            -- TabPanel for uploading the keystore file --
             <TabPanel>
               <FileUploader
                 accept={['.json']}
@@ -167,10 +207,11 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
               <br/>
               <Button onClick={()=>setOpen(true)}>Purchase Ticket</Button>
               <Modal open={open} onRequestClose={() => setOpen(false)} onRequestSubmit={purchaseTicketViaKeystore} modalHeading="Confirm Ticket Purchase" primaryButtonText="Confirm" secondaryButtonText="Cancel">
-                <p>Are you sure you want to purchase {numberOfTicketsToBuy} ticket(s) for a total of {numberOfTicketsToBuy * 0.005} ETH?</p>
+                <p>Are you sure you want to purchase {numberOfTicketsToBuy} ticket(s) for a total of {numberOfTicketsToBuy * 0.005} ETH? (Note tickets are non-refundable)</p>
               </Modal>
             </TabPanel>
 
+            -- TabPanel for manually entering the private key and wallet address --
             <TabPanel>
               <TextInput
                 id="walletAddress"
@@ -189,7 +230,7 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
               <br/>
               <Button onClick={()=>setOpen(true)}>Purchase Ticket</Button>
               <Modal open={open} onRequestClose={() => setOpen(false)} onRequestSubmit={purchaseTicketViaPrivateKey} modalHeading="Confirm Ticket Purchase" primaryButtonText="Confirm" secondaryButtonText="Cancel">
-                <p>Are you sure you want to purchase {numberOfTicketsToBuy} ticket(s) for a total of {numberOfTicketsToBuy * costPerTicket} ETH?</p>
+                <p>Are you sure you want to purchase {numberOfTicketsToBuy} ticket(s) for a total of {numberOfTicketsToBuy * costPerTicket} ETH? (Note tickets are non-refundable)</p>
               </Modal>
             </TabPanel>
           </TabPanels>
@@ -199,35 +240,3 @@ export default function PurchaseTicketPage({userWalletAddress, ticketContractAdd
     </div>
   )
 }
-
-
-
-
-
-// User needs to upload the encrypted file that they downloaded, decrypt this with the password they used 
-// Or else they could manually enter the private key and wallet address
-
-// The UI should split into two tabs, one where they can do it manually and one by loading the file 
-// The user needs to specify the amount of tickets they want to buy in either case 
-
-// The UI should also specify the cost of a ticket to the user 
-
-
-
-
-
-
-
-
-
-
-// For the upload keystore
-// The user uploads the keystore (which is basically the encryption of the private key)
-// The user enters their password to decrypt the keystore
-// The UI should then display the wallet address and private key to the user
-// The browser now has access to the private key and can sign transactions on behalf of the user
-
-
-// we can keep the number of tickets etc and price the same, but we need to separate buttons and 
-// two seperate functions to handle the purchase of tickets in either tabs
-// one tab should call function purchaseTicketViaKeystore and the other should call purchaseTicketViaPrivateKey
