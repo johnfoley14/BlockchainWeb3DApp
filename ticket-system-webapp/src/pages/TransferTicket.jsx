@@ -134,16 +134,16 @@ export default function TransferTicketPage({userWalletAddress, ticketContractAdd
   return (
     <div>
       <Tile style={{ marginTop: '5%', marginLeft: '15%', marginRight: '15%', marginBottom:'5%', border: '5px solid rgb(0, 175, 117)' }}>
-        -- use carbon components Tabs to create two tabs for the user to choose between uploading a keystore file or manually entering the private key and wallet address --
+        {/* use carbon components Tabs to create two tabs for the user to choose between uploading a keystore file or manually entering the private key and wallet address */}
         <Tabs>
           <TabList aria-label="List of tabs" contained>
             <Tab>Upload Keystore File</Tab>
             <Tab>Manual Entry</Tab>
           </TabList>
-          -- create text inputs that are consistent between both Tabs --
+          {/* create text inputs that are consistent between both Tabs */}
           <div style={{ marginLeft:'2%'}}>
             <br/>
-            -- text input to specify the number of tickets to send --
+            {/* text input to specify the number of tickets to send */}
             <TextInput
               id="numberOfTicketsToSend"
               labelText="Number of Tickets"
@@ -161,7 +161,7 @@ export default function TransferTicketPage({userWalletAddress, ticketContractAdd
             />
           </div>
           <TabPanels>
-            -- TabPanel for uploading the keystore file --
+            {/* TabPanel for uploading the keystore file */}
             <TabPanel>
               <FileUploader
                 accept={['.json']}
@@ -185,7 +185,7 @@ export default function TransferTicketPage({userWalletAddress, ticketContractAdd
                 <p>Are you sure you want to transfer {numberOfTicketsToSend} ticket(s) to the following address: {recipientAddress}</p>
               </Modal>
             </TabPanel>
-            -- TabPanel for manually entering the private key and wallet address --
+            {/* TabPanel for manually entering the private key and wallet address */}
             <TabPanel>
               <TextInput
                 id="walletAddress"

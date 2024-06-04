@@ -1,7 +1,5 @@
 import { Outlet, Link } from 'react-router-dom';
 import '../styling/Header.css';
-import PropTypes from 'prop-types';
-
 
 const Header = ({ isLoggedIn }) => {
 

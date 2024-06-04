@@ -54,7 +54,7 @@ export default function RedeemTicket({userWalletAddress, setUserWalletAddress, t
     return (
         <div style={{ marginTop: '5%', marginLeft: '15%', marginRight: '15%', marginBottom:'5%', border: '5px solid rgb(0, 175, 117)' }}>
             <Tile>
-                -- text input for the number of tickets the user wants to redeem --
+            { /* text input for the number of tickets the user wants to redeem */}	
                 <TextInput
                 id="numberOfTicketsToSend3"
                 labelText="Number of Tickets to Redeem"
@@ -64,7 +64,7 @@ export default function RedeemTicket({userWalletAddress, setUserWalletAddress, t
                 placeholder="Max 99 tickets"
                 maxLength={2}
                 />
-                -- text input for the address of the ticket holder --
+                { /* text input for the address of the ticket holder */}
                 <TextInput
                 id="userAddress3"
                 labelText="Ticket Holder Wallet Address"
@@ -72,7 +72,7 @@ export default function RedeemTicket({userWalletAddress, setUserWalletAddress, t
                 value={userWalletAddress}
                 onChange={(e) => setUserWalletAddress(e.target.value)}
                 />
-                -- text input for the doormans private key, so he can redeem the tickets --
+                { /* text input for the doormans private key, so he can redeem the tickets */}
                 <TextInput.PasswordInput
                 id="privateKey3"
                 labelText="Doorman private key"

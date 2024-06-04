@@ -45,10 +45,10 @@ function App() {
       />
     )}
       <BrowserRouter>
-        -- define the header component which links to the different pages --
+        {/* define the header component which links to the different pages */}
         <Header/> 
         <Routes>
-          -- define routes for different pages --
+          {/* define routes for different pages */}
           <Route index element={<HomePage/>} />
           <Route path="createWallet" element={<CreateWalletPage
           setUserWalletAddress={setUserWalletAddress}
