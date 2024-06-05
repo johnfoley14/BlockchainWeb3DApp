@@ -1,5 +1,7 @@
 # Getting Started with Create React App
 
+Note: This is an auto generated React README. Please refer to README in parent directory for project specific instructions.
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
