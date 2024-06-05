@@ -9,8 +9,9 @@
 5. Run local development environment ```npm run start```
 
 ## Note on use for demo
-The following may be changed when demoing the webapp
-1. Change doorman address in App.js. This will allow the user to redeem a ticket as the doorman would. This however requires the doormans private key. A doorman can be any wallet created on ```http://localhost:3000/createWallet```
+The following may be done when demoing the webapp
+1. If encountering CORs errors when demoing project, try using chrome with ```chrome.exe --user-data-dir="C://Chrome dev session" --disable-web-security```. 
+2. Feel free to change doorman address in App.js. This will allow you to fully demo redeeming a ticket as the doorman would. This however requires the doormans private key. A doorman can be any wallet created on ```http://localhost:3000/createWallet```. I have also given links to successful use of this page in the report under Successful Links and Transactions. 
 
 ## Testing using jest and truffle
 Two testing frameworks are currently in use:
@@ -20,7 +21,7 @@ Two testing frameworks are currently in use:
 Running tests:
 1. To run Jest test suite: ```npm test```
 2. To run Truffle smart contract tests: ```truffle test```
-3. To test smart contract deployment with truffle: ```truffle develop```. This should create a local development blockchain at http://127.0.0.1:9545/. Next deploy smart contract with ````migrate --reset```
+3. To test smart contract deployment with truffle: ```truffle develop```. This should create a local development blockchain at http://127.0.0.1:9545/. Next deploy smart contract with ```migrate --reset```
 
 ## Errors installing npm dependencies
 If you are having difficulty installing dependencies or running commands, please try changing execution policy:
